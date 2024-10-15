@@ -42,7 +42,9 @@ public class App : ConsoleAppBase
         [Option("m", "camelCase (default) / PascalCase / none (The name in C# is used as it is.)")]
         MethodStyle method = MethodStyle.CamelCase,
         [Option("attr", "The flag whether attributes such as JsonPropertyName should affect transpilation.")]
-        bool attribute = true)
+        bool attribute = true,
+        [Option("rxjs", "The flag to generate an RxJS Receiver")]
+        bool rxjs = false)
     {
         _logger.Log(LogLevel.Information, "Start loading the csproj of {path}.", Path.GetFullPath(project));
 
@@ -52,7 +54,7 @@ public class App : ConsoleAppBase
         {
             var compilation = await this.CreateCompilationAsync(project);
 
-            await TranspileCore(compilation, output, newLine, 4, assemblies, serializer, namingStyle, @enum, method, attribute);
+            await TranspileCore(compilation, output, newLine, 4, assemblies, serializer, namingStyle, @enum, method, attribute, rxjs);
 
             _logger.Log(LogLevel.Information, "======== Transpilation is completed. ========");
             _logger.Log(LogLevel.Information, "Please check the output folder: {output}", output);
@@ -92,7 +94,8 @@ public class App : ConsoleAppBase
         NamingStyle namingStyle,
         EnumStyle enumStyle,
         MethodStyle methodStyle,
-        bool enableAttributeReference)
+        bool enableAttributeReference,
+        bool enableRxJSReceiverGeneration)
     {
         var typeMapperProvider = new DefaultTypeMapperProvider(compilation, referencedAssembliesTranspilation);
 
@@ -124,6 +127,7 @@ public class App : ConsoleAppBase
             newLine,
             indent,
             referencedAssembliesTranspilation,
+            enableRxJSReceiverGeneration,
             enableAttributeReference
         );
 

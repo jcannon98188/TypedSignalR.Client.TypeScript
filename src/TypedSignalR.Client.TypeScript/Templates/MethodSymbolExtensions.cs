@@ -6,6 +6,40 @@ namespace TypedSignalR.Client.TypeScript.Templates;
 
 internal static class MethodSymbolExtensions
 {
+    public static string TranslateReceiverMethodIntoRxJSSubjectSyntax(this IMethodSymbol receiverMethodSymbol, SpecialSymbols specialSymbols, ITypedSignalRTranspilationOptions options)
+    {
+        if (receiverMethodSymbol.Parameters.Length == 0)
+        {
+            return "new Subject$<void>()";
+        }
+
+        if (receiverMethodSymbol.Parameters.Length == 1
+            // Ignore if the last parameter of a receiver's method is a CancellationToken.
+            && SymbolEqualityComparer.Default.Equals(receiverMethodSymbol.Parameters[0].Type, specialSymbols.CancellationTokenSymbol))
+        {
+            return "new Subject$<void>()";
+        }
+
+        return $"new Subject$<{{{ParametersToTypeScriptString(receiverMethodSymbol, specialSymbols, options)}}}>()";
+    }
+
+    public static string TranslateReceiverMethodIntoRxJSConnectionNextSyntax(this IMethodSymbol receiverMethodSymbol, SpecialSymbols specialSymbols, ITypedSignalRTranspilationOptions options)
+    {
+        if (receiverMethodSymbol.Parameters.Length == 0)
+        {
+            return $"() => __{receiverMethodSymbol.Name.Format(options.MethodStyle)}$.next()";
+        }
+
+        if (receiverMethodSymbol.Parameters.Length == 1
+            // Ignore if the last parameter of a receiver's method is a CancellationToken.
+            && SymbolEqualityComparer.Default.Equals(receiverMethodSymbol.Parameters[0].Type, specialSymbols.CancellationTokenSymbol))
+        {
+            return $"() => __{receiverMethodSymbol.Name.Format(options.MethodStyle)}$.next()";
+        }
+
+        return $"({ParametersToTypeScriptString(receiverMethodSymbol, specialSymbols, options)}) => __{receiverMethodSymbol.Name.Format(options.MethodStyle)}$.next({{{ParametersToTypeScriptArgumentString(receiverMethodSymbol, specialSymbols, options, false)}}})";
+    }
+
     public static string TranslateReceiverMethodIntoLambdaExpressionSyntax(this IMethodSymbol receiverMethodSymbol, SpecialSymbols specialSymbols, ITypedSignalRTranspilationOptions options)
     {
         if (receiverMethodSymbol.Parameters.Length == 0)
@@ -57,13 +91,20 @@ internal static class MethodSymbolExtensions
         return string.Join(", ", parameters);
     }
 
-    private static string ParametersToTypeScriptArgumentString(this IMethodSymbol methodSymbol, SpecialSymbols specialSymbols, ITypedSignalRTranspilationOptions options)
+    private static string ParametersToTypeScriptArgumentString(this IMethodSymbol methodSymbol, SpecialSymbols specialSymbols, ITypedSignalRTranspilationOptions options, bool includeStartingComma = true)
     {
         var args = methodSymbol.Parameters
             .Where(x => !SymbolEqualityComparer.Default.Equals(x.Type, specialSymbols.CancellationTokenSymbol))
             .ToArray();
 
-        return args.Any()
+        if (!includeStartingComma)
+        {
+            return args.Length != 0
+            ? string.Join(", ", args.Select(x => x.Name))
+            : string.Empty;
+        }
+
+        return args.Length != 0
             ? $", {string.Join(", ", args.Select(x => x.Name))}"
             : string.Empty;
     }

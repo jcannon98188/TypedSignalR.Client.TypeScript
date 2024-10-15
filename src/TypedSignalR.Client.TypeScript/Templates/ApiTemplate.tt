@@ -9,6 +9,10 @@
 /* tslint:disable */
 // @ts-nocheck
 <#= Header #>
+<# if (Options.GenerateRxJSReceiver) { #>
+import { Subject as Subject$ } from 'rxjs';
+<# } #>
+
 
 // components
 
@@ -128,4 +132,21 @@ class <#= receiverType.Name #>_Binder implements ReceiverRegister<<#= receiverTy
     }
 }
 
+<# } #>
+
+<# if(Options.GenerateRxJSReceiver) { #>
+<# foreach(var receiverType in ReceiverTypes) { #>
+export const <#= receiverType.FormatInterfaceNameAsConcrete() #> = (connection: HubConnection) => {
+    <# foreach(var method in receiverType.Methods) { #>
+const __<#= method.Name.Format(Options.NamingStyle) #>$ = <#= method.TranslateReceiverMethodIntoRxJSSubjectSyntax(SpecialSymbols, Options) #>;
+    connection.on("<#= method.Name #>", <#= method.TranslateReceiverMethodIntoRxJSConnectionNextSyntax(SpecialSymbols, Options) #>);
+    <# } #>
+
+    return {
+    <# foreach(var method in receiverType.Methods) { #>
+    <#= method.Name.Format(Options.NamingStyle) #>$: __<#= method.Name.Format(Options.NamingStyle) #>$.asObservable(),
+    <# } #>
+}
+} 
+<# } #>
 <# } #>
