@@ -27,17 +27,17 @@ internal static class MethodSymbolExtensions
     {
         if (receiverMethodSymbol.Parameters.Length == 0)
         {
-            return $"() => __{receiverMethodSymbol.Name.Format(options.MethodStyle)}$.next()";
+            return $"() => __{receiverMethodSymbol.Name.Format(options.NamingStyle)}$.next()";
         }
 
         if (receiverMethodSymbol.Parameters.Length == 1
             // Ignore if the last parameter of a receiver's method is a CancellationToken.
             && SymbolEqualityComparer.Default.Equals(receiverMethodSymbol.Parameters[0].Type, specialSymbols.CancellationTokenSymbol))
         {
-            return $"() => __{receiverMethodSymbol.Name.Format(options.MethodStyle)}$.next()";
+            return $"() => __{receiverMethodSymbol.Name.Format(options.NamingStyle)}$.next()";
         }
 
-        return $"({ParametersToTypeScriptString(receiverMethodSymbol, specialSymbols, options)}) => __{receiverMethodSymbol.Name.Format(options.MethodStyle)}$.next({{{ParametersToTypeScriptArgumentString(receiverMethodSymbol, specialSymbols, options, false)}}})";
+        return $"({ParametersToTypeScriptString(receiverMethodSymbol, specialSymbols, options)}) => __{receiverMethodSymbol.Name.Format(options.NamingStyle)}$.next({{{ParametersToTypeScriptArgumentString(receiverMethodSymbol, specialSymbols, options, false)}}})";
     }
 
     public static string TranslateReceiverMethodIntoLambdaExpressionSyntax(this IMethodSymbol receiverMethodSymbol, SpecialSymbols specialSymbols, ITypedSignalRTranspilationOptions options)
